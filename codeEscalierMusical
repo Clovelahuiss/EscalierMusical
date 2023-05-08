@@ -5,6 +5,13 @@
 #include <SoftwareSerial.h>
 #include <DFRobotDFPlayerMini.h>
 #include <RTClib.h>
+#include <FastLED.h>
+
+// Configuration des LEDS
+#define NUM_LEDS 150
+#define DATA_PIN 6
+#define LED_TYPE WS2812B
+#define COLOR_ORDER GRB
 
 // Configuration des broches
 #define TX_PIN 10
@@ -16,7 +23,6 @@
 // Seuils de distance en millimètres
 #define MIN_DISTANCE 0
 #define MAX_DISTANCE 1200
-// Ajoutez ces lignes au début de votre code
 #define TX_PIN2 8
 #define RX_PIN2 9
 
@@ -51,8 +57,8 @@ int frereJacques[] = { 1, 13, 3, 1, 1, 13, 3, 1, 3, 5, 3, 1, 5, 6, 1, 3, 1, 6, 5
 int laCucaracha[] = { 9, 9, 10, 8, 9, 10, 9, 8, 8, 8, 9, 9, 10, 8, 9, 10, 9, 8, 8, 8 };
 int twinkleTwinkle[] = { 1, 1, 5, 5, 6, 6, 5, 4, 4, 3, 3, 2, 2, 1, 5, 5, 4, 4, 3, 3, 2, 5, 5, 4, 4, 3, 3, 2, 1, 1, 5, 5, 6, 6, 5, 4, 4, 3, 3, 2, 2, 1 };
 int panthereRose[] = { 5, 13, 17, 21, 5, 13, 17, 21, 13, 21, 25, 29, 13, 21, 25, 29, 21, 29, 33, 37, 29, 33, 37, 41, 33, 41, 45, 49, 33, 41, 45, 49, 45, 53, 57, 61, 45, 53, 57, 61, 57, 65, 69, 73, 57, 65, 69, 73, 69, 77, 81, 85, 69, 77, 81, 85, 77, 85, 89, 93 };
-int Marseillaise[]= {57, 60, 61, 62, 61, 60, 57, 53, 52, 50, 57, 57, 57, 52, 53, 57, 57, 57, 60, 61, 62, 61, 60, 57, 53, 52, 50};a
-int LaKiffance[]={65, 60, 57, 60, 57, 53, 57, 60, 65, 60, 57, 60, 57, 53, 57, 60};
+int Marseillaise[] = { 57, 60, 61, 62, 61, 60, 57, 53, 52, 50, 57, 57, 57, 52, 53, 57, 57, 57, 60, 61, 62, 61, 60, 57, 53, 52, 50 };
+int LaKiffance[] = { 65, 60, 57, 60, 57, 53, 57, 60, 65, 60, 57, 60, 57, 53, 57, 60 };
 /////////////////////////////////Chanson de Noël///////////////////////////////////////////////////
 
 int douceNuit[] = { 3, 5, 6, 5, 3, 2, 1, 1, 3, 5, 6, 5, 3, 5, 4, 4, 5, 7, 8, 7, 5, 6, 5 };
@@ -80,16 +86,22 @@ const int TE_EN_RETARD = 30;    // L'identifiant du fichier "t'es en retard" sur
 const int CETTE_HEURE_LA = 31;  // L'identifiant du fichier "c'est à cette heure là que tu pars ?" sur la carte SD
 int currentNoteIndex = 0;
 unsigned long lastDetectionTime = 0;
-const unsigned long NOTE_DELAY = 200; // Délai minimum en millisecondes entre les notes
+const unsigned long NOTE_DELAY = 200;  // Délai minimum en millisecondes entre les notes
 unsigned long lastNoteTime = 0;
 // Initialisation des objets
 SoftwareSerial mySoftwareSerial(TX_PIN, RX_PIN);
 DFRobotDFPlayerMini myDFPlayer;
 VL53L0X sensors[NUM_SENSORS];
 
-RTC_DS3231 rtc;  // Utilisez RTC_DS1307 pour le module DS1307
+RTC_DS3231 rtc;  // Utilisation de RTC_DS1307 pour le module DS1307
+CRGB leds[NUM_LEDS];
+uint8_t brightness = 128;  // Luminosité des LEDs (0-255)
 
 void setup() {
+
+  FastLED.addLeds<LED_TYPE, DATA_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+  FastLED.setBrightness(brightness);
+
   mySoftwareSerial2.begin(9600);
   if (!myDFPlayer2.begin(mySoftwareSerial2)) {
     Serial.println(F("DFPlayer2: Erreur de communication."));
@@ -116,7 +128,7 @@ void setup() {
     sensors[i].init();
     sensors[i].setTimeout(200);
 
-  // Définir les adresses pour les capteurs
+    // Définir les adresses pour les capteurs
     sensors[i].setAddress(0x30 + i);
   }
 
@@ -139,14 +151,11 @@ void loop() {
 
   if (now.month() == 12 && now.day() >= 5 && now.day() <= 25) {  // Vérifie si la date est entre le 10 et le 25 décembre
     noteSequence = jingleBells;                                  // Mettre à jour noteSequence pour jouer "Jingle Bells"
-  } 
-  else if (now.month() == 5 && now.day() == 13) {  // Vérifie si la date est entre le 10 et le 25 décembre
-    noteSequence = joyeuxAnniversaire;             // Mettre à jour noteSequence pour jouer "joyeux anniversaire"
-  } 
-  else if (now.hour() >= 17) {                                 // Vérifie si l'heure est supérieure ou égale à 17h
-    noteSequence = clairDeLune;                                // Mettre à jour noteSequence pour jouer "Clair de lune"
-  }   
-  else {
+  } else if (now.month() == 5 && now.day() == 13) {              // Vérifie si la date est entre le 10 et le 25 décembre
+    noteSequence = joyeuxAnniversaire;                           // Mettre à jour noteSequence pour jouer "joyeux anniversaire"
+  } else if (now.hour() >= 17) {                                 // Vérifie si l'heure est supérieure ou égale à 17h
+    noteSequence = clairDeLune;                                  // Mettre à jour noteSequence pour jouer "Clair de lune"
+  } else {
     noteSequence = marcheImperiale;  // Mettre à jour noteSequence pour jouer la musique originale
   }
 
@@ -157,7 +166,8 @@ void loop() {
 
     if (distance >= MIN_DISTANCE && distance <= MAX_DISTANCE) {
       detection = true;  // Indique qu'une détection a eu lieu
-
+                         /////////////////////////////////////////////Animation des LEDS///////////////////////////////////////////////////////
+      animateStairLEDs(i);
       if (firstDetection) {
         firstDetection = false;
         if (i == 0) {
@@ -207,16 +217,29 @@ void loop() {
 
   ///////////////////////////////////////////Evenement de descent et monter///////////////////////////////////////////
   if (isGoingUp && now.minute() <= 5) {
-    if ((now.hour() >= 8) )) {  //// A toutes les heures passé : t'es en retard !!!!!!
+    if ((now.hour() >= 8)) {  //// A toutes les heures passé : t'es en retard !!!!!!
       myDFPlayer2.play(TE_EN_RETARD);
-    } 
+    }
     isGoingUp = false;  // Réinitialiser la direction
   }
-  if (isGoingDown && now.minute()<=15) 
-  {
+  if (isGoingDown && now.minute() <= 15) {
     if (now.hour() >= 15) {  //// Apartir de 15h : tu pars maintenant ?????
       myDFPlayer2.play(CETTE_HEURE_LA);
     }
     isGoingDown = false;  // Réinitialiser la direction
   }
+}
+
+
+void animateStairLEDs(int stair) {
+  int startIndex = stair * 12;
+  for (int i = 0; i < 12; i++) {
+    leds[startIndex + i] = CRGB::Red;  ///ici on peut changer la couleur (a voir si on veut faire du random)
+  }
+  FastLED.show();
+  delay(100);  // Délai pour l'animation aller-retour, à ajuster
+  for (int i = 0; i < 12; i++) {
+    leds[startIndex + i] = CRGB::Black;
+  }
+  FastLED.show();
 }
