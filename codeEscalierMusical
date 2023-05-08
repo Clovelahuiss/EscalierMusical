@@ -90,7 +90,6 @@ VL53L0X sensors[NUM_SENSORS];
 RTC_DS3231 rtc;  // Utilisez RTC_DS1307 pour le module DS1307
 
 void setup() {
-  // Ajoutez ces lignes dans la fonction setup()
   mySoftwareSerial2.begin(9600);
   if (!myDFPlayer2.begin(mySoftwareSerial2)) {
     Serial.println(F("DFPlayer2: Erreur de communication."));
